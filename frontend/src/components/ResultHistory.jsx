@@ -8,6 +8,9 @@ function ResultHistory({ onClose, onLoadResult }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // ✅ FIXED: Use environment variable instead of hardcoded localhost
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
   useEffect(() => {
     fetchHistory();
   }, [filter, page]);
@@ -26,8 +29,9 @@ function ResultHistory({ onClose, onLoadResult }) {
         return;
       }
 
+      // 🔧 FIXED: Use environment variable instead of hardcoded localhost
       const response = await fetch(
-        `http://localhost:5000/api/graphs/algorithms/results?algorithm=${filter}&limit=10&page=${page}`,
+        `${API_BASE_URL}/api/graphs/algorithms/results?algorithm=${filter}&limit=10&page=${page}`,
         {
           method: 'GET',
           headers: {
@@ -76,9 +80,9 @@ function ResultHistory({ onClose, onLoadResult }) {
         return;
       }
 
-      // 🔧 FIXED: Updated URL to match single controller approach
+      // 🔧 FIXED: Use environment variable instead of hardcoded localhost
       const response = await fetch(
-        `http://localhost:5000/api/graphs/algorithms/results/${resultId}`,
+        `${API_BASE_URL}/api/graphs/algorithms/results/${resultId}`,
         { 
           method: 'DELETE',
           headers: {
@@ -335,6 +339,357 @@ function ResultHistory({ onClose, onLoadResult }) {
 }
 
 export default ResultHistory;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useState, useEffect } from 'react';
+
+// function ResultHistory({ onClose, onLoadResult }) {
+//   const [history, setHistory] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState(null);
+//   const [filter, setFilter] = useState('all');
+//   const [page, setPage] = useState(1);
+//   const [totalPages, setTotalPages] = useState(1);
+
+//   useEffect(() => {
+//     fetchHistory();
+//   }, [filter, page]);
+
+//   // Fetch algorithm execution history
+//   const fetchHistory = async () => {
+//     try {
+//       setLoading(true);
+//       setError(null);
+      
+//       const token = localStorage.getItem('token');
+      
+//       if (!token) {
+//         setError('Authentication required. Please login again.');
+//         setLoading(false);
+//         return;
+//       }
+
+//       const response = await fetch(
+//         `http://localhost:5000/api/graphs/algorithms/results?algorithm=${filter}&limit=10&page=${page}`,
+//         {
+//           method: 'GET',
+//           headers: {
+//             'Content-Type': 'application/json',
+//             'Authorization': `Bearer ${token}`
+//           }
+//         } 
+//       );
+
+//       if (!response.ok) {
+//         if (response.status === 401) {
+//           localStorage.removeItem('token');
+//           setError('Session expired. Please login again.');
+//           return;
+//         }
+//         throw new Error(`Failed to fetch history: ${response.status}`);
+//       }
+
+//       const data = await response.json();
+
+//       if (data.success) {
+//         setHistory(data.data || []);
+//         setTotalPages(data.totalPages || 1);
+//       } else {
+//         setError(data.error || 'Failed to load history');
+//       }
+//     } catch (error) {
+//       console.error('Error fetching history:', error);
+//       setError('Failed to load history. Please try again.');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Delete algorithm result
+//   const handleDeleteResult = async (resultId) => {
+//     if (!window.confirm('Are you sure you want to delete this result?')) {
+//       return;
+//     }
+
+//     try {
+//       const token = localStorage.getItem('token');
+      
+//       if (!token) {
+//         setError('Authentication required. Please login again.');
+//         return;
+//       }
+
+//       // 🔧 FIXED: Updated URL to match single controller approach
+//       const response = await fetch(
+//         `http://localhost:5000/api/graphs/algorithms/results/${resultId}`,
+//         { 
+//           method: 'DELETE',
+//           headers: {
+//             'Authorization': `Bearer ${token}`
+//           }
+//         }
+//       );
+
+//       if (!response.ok) {
+//         if (response.status === 401) {
+//           localStorage.removeItem('token');
+//           setError('Session expired. Please login again.');
+//           return;
+//         }
+//         throw new Error(`Failed to delete result: ${response.status}`);
+//       }
+
+//       // Remove from local state immediately for better UX
+//       setHistory(history.filter(h => h._id !== resultId));
+      
+//       // Optionally refetch to ensure consistency
+//       // fetchHistory();
+//     } catch (error) {
+//       console.error('Error deleting result:', error);
+//       setError('Failed to delete result. Please try again.');
+//     }
+//   };
+
+//   const formatDate = (dateString) => {
+//     return new Date(dateString).toLocaleString('en-US', {
+//       year: 'numeric',
+//       month: 'short',
+//       day: 'numeric',
+//       hour: '2-digit',
+//       minute: '2-digit'
+//     });
+//   };
+
+//   const formatExecutionTime = (time) => {
+//     return time < 1000 ? `${time}ms` : `${(time / 1000).toFixed(2)}s`;
+//   };
+
+//   return (
+//     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-2 sm:p-4">
+//       <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 
+//                       w-full sm:w-[95%] md:w-[90%] lg:w-[85%] max-w-5xl
+//                       max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl">
+
+//         {/* Header */}
+//         <div className="flex justify-between items-center mb-4 sm:mb-6 pb-2 border-b border-gray-200">
+//           <h2 className="text-blue-600 text-xl sm:text-2xl lg:text-3xl font-bold flex items-center">
+//             <span className="mr-2">📈</span>
+//             Algorithm Execution History
+//           </h2>
+//           <button 
+//             onClick={onClose} 
+//             className="text-xl sm:text-2xl text-gray-600 hover:text-gray-800 
+//                        p-1 rounded-full hover:bg-gray-100 transition-colors"
+//           >
+//             ×
+//           </button>
+//         </div>
+
+//         {/* Error message display */}
+//         {error && (
+//           <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+//             <div className="flex items-center">
+//               <span className="text-red-600 mr-2">⚠️</span>
+//               <p className="text-red-800 text-sm sm:text-base">{error}</p>
+//             </div>
+//             <button
+//               onClick={fetchHistory}
+//               className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm
+//                          hover:bg-red-700 transition-colors"
+//             >
+//               Try Again
+//             </button>
+//           </div>
+//         )}
+
+//         {/* Filter Controls */}
+//         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+//           <label className="font-semibold text-gray-700 text-sm sm:text-base">
+//             Filter by Algorithm:
+//           </label>
+//           <select
+//             value={filter}
+//             onChange={(e) => {
+//               setFilter(e.target.value);
+//               setPage(1);
+//             }}
+//             className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg 
+//                        text-sm sm:text-base focus:ring-2 focus:ring-blue-300
+//                        hover:border-gray-400 transition-colors"
+//           >
+//             <option value="all">All Algorithms</option>
+//             <option value="dijkstra">Dijkstra</option>
+//             <option value="bellman_ford">Bellman-Ford</option>
+//             <option value="floyd_warshall">Floyd-Warshall</option>
+//             <option value="prims">Prim's</option>
+//             <option value="kruskal">Kruskal's</option>
+//           </select>
+//         </div>
+
+//         {/* Content */}
+//         {loading ? (
+//           <div className="flex flex-col items-center justify-center py-12 sm:py-16">
+//             <div className="w-6 sm:w-8 h-6 sm:h-8 mb-3 sm:mb-4 border-2 sm:border-4 
+//                             border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+//             <p className="text-gray-600 text-sm sm:text-base">Loading your algorithm history...</p>
+//           </div>
+//         ) : history.length === 0 ? (
+//           <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center">
+//             <div className="w-16 sm:w-20 h-16 sm:h-20 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+//               <span className="text-2xl sm:text-3xl">📊</span>
+//             </div>
+//             <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
+//               No Algorithm History Yet
+//             </h3>
+//             <p className="text-gray-600 text-sm sm:text-base max-w-md mb-2">
+//               {filter !== 'all' 
+//                 ? `No ${filter} algorithm results found.`
+//                 : 'No algorithm execution history found.'
+//               }
+//             </p>
+//             <p className="text-gray-500 text-sm">
+//               Run some algorithms to see them here!
+//             </p>
+//           </div>
+//         ) : (
+//           <div>
+//             {/* Results Count */}
+//             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+//               <p className="text-blue-800 text-sm sm:text-base font-medium flex items-center">
+//                 <span className="mr-2">🔍</span>
+//                 Found {history.length} result{history.length !== 1 ? 's' : ''}
+//                 {filter !== 'all' && ` for ${filter.replace('_', '-').toUpperCase()}`}
+//                 {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
+//               </p>
+//             </div>
+
+//             {/* Results Grid */}
+//             <div className="space-y-3 sm:space-y-4">
+//               {history.map((result) => (
+//                 <div key={result._id} 
+//                      className="border border-gray-200 rounded-lg sm:rounded-xl 
+//                                 p-3 sm:p-4 lg:p-5 bg-gray-50 hover:bg-gray-100
+//                                 transition-colors duration-200">
+//                   <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4">
+//                     <div className="flex-1 min-w-0">
+//                       {/* Algorithm Title */}
+//                       <h3 className="text-gray-800 text-base sm:text-lg font-semibold mb-2 sm:mb-3 truncate">
+//                         <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs sm:text-sm font-bold mr-2">
+//                           {result.algorithm.replace('_', '-').toUpperCase()}
+//                         </span>
+//                         {result.graphName}
+//                       </h3>
+
+//                       {/* Statistics Grid */}
+//                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-2 sm:mb-3">
+//                         <div className="bg-white rounded-lg p-2 text-center">
+//                           <div className="text-sm sm:text-base font-bold text-gray-900">
+//                             {result.source || 'N/A'}
+//                           </div>
+//                           <div className="text-xs text-gray-500">Source</div>
+//                         </div>
+//                         <div className="bg-white rounded-lg p-2 text-center">
+//                           <div className="text-sm sm:text-base font-bold text-gray-900">
+//                             {result.nodeCount || 0}
+//                           </div>
+//                           <div className="text-xs text-gray-500">Nodes</div>
+//                         </div>
+//                         <div className="bg-white rounded-lg p-2 text-center">
+//                           <div className="text-sm sm:text-base font-bold text-gray-900">
+//                             {result.edgeCount || 0}
+//                           </div>
+//                           <div className="text-xs text-gray-500">Edges</div>
+//                         </div>
+//                         <div className="bg-white rounded-lg p-2 text-center">
+//                           <div className="text-sm sm:text-base font-bold text-blue-600">
+//                             {formatExecutionTime(result.executionTime || 0)}
+//                           </div>
+//                           <div className="text-xs text-gray-500">Time</div>
+//                         </div>
+//                       </div>
+
+//                       {/* Timestamp */}
+//                       <div className="text-xs sm:text-sm text-gray-400">
+//                         Executed: {formatDate(result.createdAt)}
+//                       </div>
+//                     </div>
+
+//                     {/* Action Buttons */}
+//                     <div className="flex gap-2 w-full sm:w-auto">
+//                       <button
+//                         onClick={() => onLoadResult && onLoadResult(result)}
+//                         className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600 text-white 
+//                                    rounded-lg text-sm font-medium hover:bg-blue-700
+//                                    transition-colors duration-200"
+//                       >
+//                         📋 View
+//                       </button>
+//                       <button
+//                         onClick={() => handleDeleteResult(result._id)}
+//                         className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-500 text-white 
+//                                    rounded-lg text-sm font-medium hover:bg-red-600
+//                                    transition-colors duration-200"
+//                       >
+//                         🗑️ Delete
+//                       </button>
+//                     </div>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+
+//             {/* Pagination */}
+//             {totalPages > 1 && (
+//               <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-6 sm:mt-8">
+//                 <button
+//                   onClick={() => setPage(page - 1)}
+//                   disabled={page === 1}
+//                   className={`w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg 
+//                              text-sm sm:text-base font-medium transition-colors
+//                              ${page === 1 
+//                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+//                                : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+//                 >
+//                   ← Previous
+//                 </button>
+
+//                 <span className="text-gray-500 text-sm sm:text-base">
+//                   Page {page} of {totalPages}
+//                 </span>
+
+//                 <button
+//                   onClick={() => setPage(page + 1)}
+//                   disabled={page === totalPages}
+//                   className={`w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg 
+//                              text-sm sm:text-base font-medium transition-colors
+//                              ${page === totalPages 
+//                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+//                                : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+//                 >
+//                   Next →
+//                 </button>
+//               </div>
+//             )}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+// export default ResultHistory;
 
 
 
